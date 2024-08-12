@@ -1,0 +1,275 @@
+pipeline {
+    agent {
+                label ("deploy")
+            }
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('del-docker-hub-auth')
+    }
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+        disableConcurrentBuilds()
+        timeout(time: 60, unit: 'MINUTES')
+        timestamps()
+    }
+    stages {
+        stage('Setup parameters') {
+            steps {
+                script {
+                    properties([
+                        parameters([
+                          string(
+                            defaultValue: 'v1.0.0',
+                            name: 'TAG_UI',
+			    description: 'Enter TAG for UI',
+                            trim: true
+                            ),
+                            
+
+                          string(
+                            defaultValue: 'v1.0.0',
+                            name: 'TAG_ORDERS',
+			    description: 'Enter TAG for ORDERS',
+                            trim: true
+                            ),
+
+
+                          string(
+                            defaultValue: 'v1.0.0',
+                            name: 'TAG_CHECKOUT',
+			    description: 'Enter TAG for CHECKOUT',
+                            trim: true
+                            ),
+
+                          string(
+                            defaultValue: 'v1.0.0',
+                            name: 'TAG_CATALOG',
+			    description: 'Enter TAG for CATALOG',
+                            trim: true
+                            ),
+
+                          string(
+                            defaultValue: 'v1.0.0',
+                            name: 'TAG_CART',
+			    description: 'Enter TAG for CART',
+                            trim: true
+                            ),
+
+                          string(
+                            defaultValue: 'v1.0.0',
+                            name: 'TAG_ASSETS',
+			    description: 'Enter TAG for ASSETS',
+                            trim: true
+                            ),
+                        ])
+                    ])
+                }
+            }
+        }
+
+        stage('Login') {
+            steps {
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+        }
+
+        stage('validating input') {
+            steps {
+                sh '''
+                cd ${WORKSPACE} 
+                bash validate.sh $TAG_UI $TAG_ORDERS $TAG_CHECKOUT $TAG_CATALOG $TAG_CART $TAG_ASSETS
+                '''
+            }
+        }
+
+        stage('Tag') {
+            steps {
+                sh '''
+                rm -rf TAG || true
+                mkdir TAG && cd TAG
+                git clone -b production  git@github.com:DEL-ORG/Eric-do-it-yourself-UI.git         UI
+                git clone -b production   git@github.com:DEL-ORG/Eric-do-it-yourself-Orders.git    ORDERS
+                git clone -b production   git@github.com:DEL-ORG/Eric-do-it-yourself-Checkout.git   CHECKOUT
+                git clone -b production   git@github.com:DEL-ORG/Eric-do-it-yourself-Catalog.git    CATALOG
+                git clone -b production  git@github.com:DEL-ORG/Eric-do-it-yourself-Cart.git       CART
+                git clone -b production   git@github.com:DEL-ORG/Eric-do-it-yourself-Assets.git     ASSETS
+for i in UI ORDERS CHECKOUT CATALOG CART ASSETS 
+do 
+  cd $i 
+  DIR=$(basename "$(pwd)")
+
+  if [ "$DIR" = "UI" ]; then 
+    if git rev-parse "$TAG_UI" >/dev/null 2>&1; then
+      git tag -d $TAG_UI
+      git push origin :refs/tags/$TAG_UI
+    fi
+    git tag -a $TAG_UI -m "Release version $TAG_UI"
+    git push origin $TAG_UI
+
+  elif [ "$DIR" = "ORDERS" ]; then 
+    if git rev-parse "$TAG_ORDERS" >/dev/null 2>&1; then
+      git tag -d $TAG_ORDERS
+      git push origin :refs/tags/$TAG_ORDERS
+    fi
+    git tag -a $TAG_ORDERS -m "Release version $TAG_ORDERS"
+    git push origin $TAG_ORDERS
+
+  elif [ "$DIR" = "CHECKOUT" ]; then 
+    if git rev-parse "$TAG_CHECKOUT" >/dev/null 2>&1; then
+      git tag -d $TAG_CHECKOUT
+      git push origin :refs/tags/$TAG_CHECKOUT
+    fi
+    git tag -a $TAG_CHECKOUT -m "Release version $TAG_CHECKOUT"
+    git push origin $TAG_CHECKOUT
+
+  elif [ "$DIR" = "CATALOG" ]; then 
+    if git rev-parse "$TAG_CATALOG" >/dev/null 2>&1; then
+      git tag -d $TAG_CATALOG
+      git push origin :refs/tags/$TAG_CATALOG
+    fi
+    git tag -a $TAG_CATALOG -m "Release version $TAG_CATALOG"
+    git push origin $TAG_CATALOG
+
+  elif [ "$DIR" = "CART" ]; then 
+    if git rev-parse "$TAG_CART" >/dev/null 2>&1; then
+      git tag -d $TAG_CART
+      git push origin :refs/tags/$TAG_CART
+    fi
+    git tag -a $TAG_CART -m "Release version $TAG_CART"
+    git push origin $TAG_CART
+
+  elif [ "$DIR" = "ASSETS" ]; then 
+    if git rev-parse "$TAG_ASSETS" >/dev/null 2>&1; then
+      git tag -d $TAG_ASSETS
+      git push origin :refs/tags/$TAG_ASSETS
+    fi
+    git tag -a $TAG_ASSETS -m "Release version $TAG_ASSETS"
+    git push origin $TAG_ASSETS
+  fi
+
+  cd ..
+done
+
+                '''
+            }
+}
+
+
+        stage('UI+build+push') {
+
+            steps {
+                sh '''
+                rm -rf Eric-do-it-yourself-UI || true
+                git clone  -b production git@github.com:DEL-ORG/Eric-do-it-yourself-UI.git
+                cd ${WORKSPACE}/Eric-do-it-yourself-UI/ui
+                docker build -t devopseasylearning/eric_do_it_yourself_ui:${TAG_UI} .
+                docker push  devopseasylearning/eric_do_it_yourself_ui:${TAG_UI}
+                '''
+            }
+        }
+
+
+
+        stage('ORDERS+build+push') {
+
+            steps {
+                sh '''
+                rm -rf Eric-do-it-yourself-Orders || true
+                git clone  -b production git@github.com:DEL-ORG/Eric-do-it-yourself-Orders.git
+                cd ${WORKSPACE}/Eric-do-it-yourself-Orders/orders
+                docker build -t devopseasylearning/eric_do_it_yourself_orders:${TAG_ORDERS} .
+                docker build -t devopseasylearning/eric_do_it_yourself_orders_db:${TAG_ORDERS} . -f Dockerfile-db
+                docker build -t devopseasylearning/eric_do_it_yourself_orders_db_rabbitmq:${TAG_ORDERS} . -f Dockerfile-rabbit-mq
+                docker push  devopseasylearning/eric_do_it_yourself_orders:${TAG_ORDERS}
+                docker push devopseasylearning/eric_do_it_yourself_orders_db:${TAG_ORDERS}
+                docker push devopseasylearning/eric_do_it_yourself_orders_db_rabbitmq:${TAG_ORDERS}
+                '''
+            }
+        }
+
+
+        stage('CHECKOUT+build+push') {
+
+            steps {
+                sh '''
+                rm -rf Eric-do-it-yourself-Checkout || true
+                git clone -b production  git@github.com:DEL-ORG/Eric-do-it-yourself-Checkout.git
+                cd ${WORKSPACE}/Eric-do-it-yourself-Checkout/checkout
+                docker build  -t devopseasylearning/eric_do_it_yourself_checkout:${TAG_CHECKOUT} .
+                docker build  -t devopseasylearning/eric_do_it_yourself_checkout_db:${TAG_CHECKOUT} . -f Dockerfile-db
+                docker push  devopseasylearning/eric_do_it_yourself_checkout:${TAG_CHECKOUT}
+                docker push devopseasylearning/eric_do_it_yourself_checkout_db:${TAG_CHECKOUT}
+                '''
+            }
+        }
+
+
+        stage('CATALOG+build+push') {
+
+            steps {
+                sh '''
+                rm -rf Eric-do-it-yourself-Catalog || true
+                git clone  -b production git@github.com:DEL-ORG/Eric-do-it-yourself-Catalog.git
+                cd ${WORKSPACE}/Eric-do-it-yourself-Catalog/catalog
+                docker build  -t devopseasylearning/eric_do_it_yourself_catalog:${TAG_CATALOG} .
+                docker build  -t devopseasylearning/eric_do_it_yourself_catalog_db:${TAG_CATALOG} . -f Dockerfile-db
+                docker push  devopseasylearning/eric_do_it_yourself_catalog:${TAG_CATALOG}
+                docker push devopseasylearning/eric_do_it_yourself_catalog_db:${TAG_CATALOG}
+
+                '''
+            }
+        }
+
+
+        stage('CART+build+push') {
+
+            steps {
+                sh '''
+                rm -rf Eric-do-it-yourself-Cart || true
+                git clone -b production git@github.com:DEL-ORG/Eric-do-it-yourself-Cart.git
+                cd ${WORKSPACE}/Eric-do-it-yourself-Cart/cart
+                docker  build -t devopseasylearning/eric_do_it_yourself_cart:${TAG_CART} .
+                docker  build -t devopseasylearning/eric_do_it_yourself_cart_dynamodb:${TAG_CART} . -f Dockerfile-dynamodb 
+                docker push  devopseasylearning/eric_do_it_yourself_cart:${TAG_CART}
+                docker push devopseasylearning/eric_do_it_yourself_cart_dynamodb:${TAG_CART}
+
+                '''
+            }
+        }      
+
+        stage('ASSETS+build+push') {
+
+            steps {
+                sh '''
+                rm -rf Eric-do-it-yourself-Assets || true
+                git clone -b production  git@github.com:DEL-ORG/Eric-do-it-yourself-Assets.git
+                cd ${WORKSPACE}/Eric-do-it-yourself-Assets/assets
+                docker build -t devopseasylearning/eric_do_it_yourself_assets:${TAG_ASSETS} .
+                docker push devopseasylearning/eric_do_it_yourself_assets:${TAG_ASSETS}
+
+                '''
+            }
+        }
+
+
+
+
+    }
+
+    post {
+        success {
+            slackSend(channel: '#development-alerts', color: 'good', message: "SUCCESSFUL: Application Eric-do-it-yourself-UI REDAY for PROD\n TAG information\n UI: $TAG_UI\n ORDERS: $TAG_ORDERS\n CHECKOUT: $TAG_CHECKOUT\n CATALOG: $TAG_CATALOG\n CART: $TAG_CART\n ASSETS: $TAG_ASSETS")
+        }
+
+        unstable {
+            slackSend(channel: '#development-alerts', color: 'warning', message: "UNSTABLE: Application Eric-do-it-yourself-UI  Job '${env.JOB_NAME} [${env.TAG}]' (${env.BUILD_URL})")
+        }
+
+        failure {
+            slackSend(channel: '#development-alerts', color: '#FF0000', message: "FAILURE: Application Eric-do-it-yourself-UI Job '${env.JOB_NAME} [${env.TAG}]' (${env.BUILD_URL})")
+        }
+
+        cleanup {
+            deleteDir()
+        }
+    }
+}
