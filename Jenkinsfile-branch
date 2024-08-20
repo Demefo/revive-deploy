@@ -1,14 +1,16 @@
 pipeline {
     agent any
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('del-docker-hub-auth')
-    }
+		DOCKERHUB_CREDENTIALS=credentials('rudi-dockerhub')
+        GITHUB_CREDENTIALS=credentials('rudi-github')
+	}
+
     options {
-        buildDiscarder(logRotator(numToKeepStr: '20'))
+        buildDiscarder(logRotator(numToKeepStr: '5'))
         disableConcurrentBuilds()
-        timeout(time: 60, unit: 'MINUTES')
+        timeout (time: 5, unit: 'MINUTES')
         timestamps()
-    }
+      }
     stages {
         stage('Setup parameters') {
             steps {
@@ -17,50 +19,42 @@ pipeline {
                         parameters([
                         
                           string(
-                            defaultValue: 'main',
+                            defaultValue: 'ui',
                             name: 'BRANCH_UI',
 			    description: 'Enter branch to deploy the UI',
                             trim: true
                             ),
 
                           string(
-                            defaultValue: 'main',
-                            name: 'BRANCH_ORDERS',
-			    description: 'Enter branch to deploy the ORDERS',
-                            trim: true
-                            ),
-
-
-                          string(
-                            defaultValue: 'main',
+                            defaultValue: 'orders',
                             name: 'BRANCH_ORDERS',
 			    description: 'Enter branch to deploy the ORDERS',
                             trim: true
                             ),
 
                           string(
-                            defaultValue: 'main',
+                            defaultValue: 'checkout',
                             name: 'BRANCH_CHECKOUT',
 			    description: 'Enter branch to deploy the CHECKOUT',
                             trim: true
                             ),
 
                           string(
-                            defaultValue: 'main',
+                            defaultValue: 'catalog',
                             name: 'BRANCH_CATALOG',
 			    description: 'Enter branch to deploy the CATALOG',
                             trim: true
                             ),
 
                           string(
-                            defaultValue: 'main',
+                            defaultValue: 'carts',
                             name: 'BRANCH_CART',
 			    description: 'Enter branch to deploy the CART',
                             trim: true
                             ),
 
                           string(
-                            defaultValue: 'main',
+                            defaultValue: 'assets',
                             name: 'BRANCH_ASSETS',
 			    description: 'Enter branch to deploy the ASSETS',
                             trim: true
@@ -81,11 +75,11 @@ pipeline {
 
             steps {
                 sh '''
-                rm -rf Eric-do-it-yourself-UI || true
-                git clone -b ${BRANCH_UI} git@github.com:DEL-ORG/Eric-do-it-yourself-UI.git
-                cd ${WORKSPACE}/Eric-do-it-yourself-UI/ui
-                docker build -t devopseasylearning/eric_do_it_yourself_ui:${BUILD_NUMBER} .
-                docker push  devopseasylearning/eric_do_it_yourself_ui:${BUILD_NUMBER}
+                rm -rf revive-app || true
+                git clone -b ${BRANCH_UI} git@github.com:Demefo/Revive-app.git
+                cd ${WORKSPACE}/revive-app/ui
+                docker build -t rudiori/revive-ui:${BUILD_NUMBER} .
+                docker push  rudiori/revive-ui:${BUILD_NUMBER}
                 '''
             }
         }
@@ -96,15 +90,15 @@ pipeline {
 
             steps {
                 sh '''
-                rm -rf Eric-do-it-yourself-Orders || true
-                git clone -b ${BRANCH_ORDERS} git@github.com:DEL-ORG/Eric-do-it-yourself-Orders.git
-                cd ${WORKSPACE}/Eric-do-it-yourself-Orders/orders
-                docker build -t devopseasylearning/eric_do_it_yourself_orders:${BUILD_NUMBER} .
-                docker build -t devopseasylearning/eric_do_it_yourself_orders_db:${BUILD_NUMBER} . -f Dockerfile-db
-                docker build -t devopseasylearning/eric_do_it_yourself_orders_db_rabbitmq:${BUILD_NUMBER} . -f Dockerfile-rabbit-mq
-                docker push  devopseasylearning/eric_do_it_yourself_orders:${BUILD_NUMBER}
-                docker push devopseasylearning/eric_do_it_yourself_orders_db:${BUILD_NUMBER}
-                docker push devopseasylearning/eric_do_it_yourself_orders_db_rabbitmq:${BUILD_NUMBER}
+                rm -rf revive-app || true
+                git clone -b ${BRANCH_ORDERS} git@github.com:Demefo/Revive-app.git
+                cd ${WORKSPACE}/revive-app/orders
+                docker build -t rudiori/revive-orders:${BUILD_NUMBER} .
+                docker build -t rudiori/revive-orders-db:${BUILD_NUMBER} . -f Dockerfile-db
+                docker build -t rudiori/revive-orders-db-rabbitmq:${BUILD_NUMBER} . -f Dockerfile-rabbit-mq
+                docker push  rudiori/revive-orders:${BUILD_NUMBER}
+                docker push rudiori/revive-orders-db:${BUILD_NUMBER}
+                docker push rudiori/revive-orders-db-rabbitmq:${BUILD_NUMBER}
                 '''
             }
         }
@@ -114,13 +108,13 @@ pipeline {
 
             steps {
                 sh '''
-                rm -rf Eric-do-it-yourself-Checkout || true
-                git clone -b ${BRANCH_CHECKOUT} git@github.com:DEL-ORG/Eric-do-it-yourself-Checkout.git
-                cd ${WORKSPACE}/Eric-do-it-yourself-Checkout/checkout
-                docker build  -t devopseasylearning/eric_do_it_yourself_checkout:${BUILD_NUMBER} .
-                docker build  -t devopseasylearning/eric_do_it_yourself_checkout_db:${BUILD_NUMBER} . -f Dockerfile-db
-                docker push  devopseasylearning/eric_do_it_yourself_checkout:${BUILD_NUMBER}
-                docker push devopseasylearning/eric_do_it_yourself_checkout_db:${BUILD_NUMBER}
+                rm -rf revive-app || true
+                git clone -b ${BRANCH_CHECKOUT} git@github.com:Demefo/Revive-app.git
+                cd ${WORKSPACE}/revive-app/checkout
+                docker build  -t rudiori/revive-checkout:${BUILD_NUMBER} .
+                docker build  -t rudiori/revive-checkout-db:${BUILD_NUMBER} . -f Dockerfile-db
+                docker push  rudiori/revive-checkout:${BUILD_NUMBER}
+                docker push rudiori/revive-checkout-db:${BUILD_NUMBER}
                 '''
             }
         }
@@ -130,13 +124,13 @@ pipeline {
 
             steps {
                 sh '''
-                rm -rf Eric-do-it-yourself-Catalog || true
-                git clone -b ${BRANCH_CATALOG} git@github.com:DEL-ORG/Eric-do-it-yourself-Catalog.git
-                cd ${WORKSPACE}/Eric-do-it-yourself-Catalog/catalog
-                docker build  -t devopseasylearning/eric_do_it_yourself_catalog:${BUILD_NUMBER} .
-                docker build  -t devopseasylearning/eric_do_it_yourself_catalog_db:${BUILD_NUMBER} . -f Dockerfile-db
-                docker push  devopseasylearning/eric_do_it_yourself_catalog:${BUILD_NUMBER}
-                docker push devopseasylearning/eric_do_it_yourself_catalog_db:${BUILD_NUMBER}
+                rm -rf revive-app || true
+                git clone -b ${BRANCH_CATALOG} git@github.com:Demefo/Revive-app.git
+                cd ${WORKSPACE}/revive-app/catalog
+                docker build  -t rudiori/revive-catalog:${BUILD_NUMBER} .
+                docker build  -t rudiori/revive-catalog-db:${BUILD_NUMBER} . -f Dockerfile-db
+                docker push  rudiori/revive-catalog:${BUILD_NUMBER}
+                docker push rudiori/revive-catalog-db:${BUILD_NUMBER}
 
                 '''
             }
@@ -147,13 +141,13 @@ pipeline {
 
             steps {
                 sh '''
-                rm -rf Eric-do-it-yourself-Cart || true
-                git clone -b ${BRANCH_CART} git@github.com:DEL-ORG/Eric-do-it-yourself-Cart.git
-                cd ${WORKSPACE}/Eric-do-it-yourself-Cart/cart
-                docker  build -t devopseasylearning/eric_do_it_yourself_cart:${BUILD_NUMBER} .
-                docker  build -t devopseasylearning/eric_do_it_yourself_cart_dynamodb:${BUILD_NUMBER} . -f Dockerfile-dynamodb 
-                docker push  devopseasylearning/eric_do_it_yourself_cart:${BUILD_NUMBER}
-                docker push devopseasylearning/eric_do_it_yourself_cart_dynamodb:${BUILD_NUMBER}
+                rm -rf revive-app || true
+                git clone -b ${BRANCH_CART} git@github.com:Demefo/Revive-app.git
+                cd ${WORKSPACE}/revive-app/cart
+                docker  build -t rudiori/revive-cart:${BUILD_NUMBER} .
+                docker  build -t rudiori/revive-cart_dynamodb:${BUILD_NUMBER} . -f Dockerfile-dynamodb 
+                docker push  rudiori/revive-cart:${BUILD_NUMBER}
+                docker push rudiori/revive-cart_dynamodb:${BUILD_NUMBER}
 
                 '''
             }
@@ -163,11 +157,11 @@ pipeline {
 
             steps {
                 sh '''
-                rm -rf Eric-do-it-yourself-Assets || true
-                git clone -b ${BRANCH_ASSETS} git@github.com:DEL-ORG/Eric-do-it-yourself-Assets.git
-                cd ${WORKSPACE}/Eric-do-it-yourself-Assets/assets
-                docker build -t devopseasylearning/eric_do_it_yourself_assets:${BUILD_NUMBER} .
-                docker push devopseasylearning/eric_do_it_yourself_assets:${BUILD_NUMBER}
+                rm -rf revive-app || true
+                git clone -b ${BRANCH_ASSETS} git@github.com:Demefo/Revive-app.git
+                cd ${WORKSPACE}/revive-app/assets
+                docker build -t rudiori/revive-assets:${BUILD_NUMBER} .
+                docker push rudiori/revive-assets:${BUILD_NUMBER}
 
                 '''
             }
@@ -177,9 +171,10 @@ stage('trigger-deployment') {
     steps {
         sh '''
             TAG=${BUILD_NUMBER}
-            rm -rf Eric-do-it-yourself-devops-automation || true
-            git clone git@github.com:DEL-ORG/Eric-do-it-yourself-devops-automation.git 
-            cd Eric-do-it-yourself-devops-automation/chart
+            TOKEN=$GITHUB_CREDENTIALS_PSW
+            rm -rf revive-deploy || true
+            git clone git@github.com:Demefo/Revive-deploy.git
+            cd revive-deploy/chart
             yq eval '.ui.tag = "'"$TAG"'"' -i branch-values.yaml
             yq eval '.assets.tag = "'"$TAG"'"' -i branch-values.yaml
             yq eval '.checkout_db.tag = "'"$TAG"'"' -i branch-values.yaml
@@ -192,15 +187,16 @@ stage('trigger-deployment') {
             yq eval '.orders_db.tag = "'"$TAG"'"' -i branch-values.yaml
             yq eval '.catalog.tag = "'"$TAG"'"' -i branch-values.yaml
 
-            git config --global user.name "devopseasylearning"
-            git config --global user.email info@devopseasylearning.com
+            git config --global user.name "rudi"
+            git config --global user.email info@rudi.com
             
             git add -A
             if git diff-index --quiet HEAD; then
                 echo "No changes to commit"
             else
                 git commit -m "updating APPS  to ${BUILD_NUMBER}"
-                git push origin main
+                git push https://Demefo:$TOKEN@github.com/Demefo/revive-deploy.git
+
             fi
         '''
     }
