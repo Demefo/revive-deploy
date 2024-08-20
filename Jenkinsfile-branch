@@ -77,6 +77,7 @@ pipeline {
                 sh '''
                 rm -rf revive-app || true
                 git clone -b ${BRANCH_UI} git@github.com:Demefo/Revive-app.git
+                ls -lh
                 cd ${WORKSPACE}/ui
                 docker build -t rudiori/revive-ui:${BUILD_NUMBER} .
                 docker push  rudiori/revive-ui:${BUILD_NUMBER}
