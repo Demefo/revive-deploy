@@ -174,7 +174,7 @@ stage('trigger-deployment') {
             TAG=${BUILD_NUMBER}
             TOKEN=$GITHUB_CREDENTIALS_PSW
             rm -rf revive-deploy || true
-            git clone git@github.com:Demefo/Revive-deploy.git
+            git clone git@github.com:Demefo/revive-deploy.git
             cd revive-deploy/chart
             yq eval '.ui.tag = "'"$TAG"'"' -i branch-values.yaml
             yq eval '.assets.tag = "'"$TAG"'"' -i branch-values.yaml
