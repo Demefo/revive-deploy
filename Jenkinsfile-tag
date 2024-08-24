@@ -3,12 +3,13 @@ pipeline {
                 label ("deploy")
             }
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('del-docker-hub-auth')
+        DOCKERHUB_CREDENTIALS = credentials('rudi-dockerhub')
+        GITHUB_CREDENTIALS=credentials('rudi-github')
     }
     options {
-        buildDiscarder(logRotator(numToKeepStr: '20'))
+        buildDiscarder(logRotator(numToKeepStr: '5'))
         disableConcurrentBuilds()
-        timeout(time: 60, unit: 'MINUTES')
+        timeout(time: 5, unit: 'MINUTES')
         timestamps()
     }
     stages {
@@ -86,12 +87,13 @@ pipeline {
                 sh '''
                 rm -rf TAG || true
                 mkdir TAG && cd TAG
-                git clone -b production  git@github.com:DEL-ORG/Eric-do-it-yourself-UI.git         UI
-                git clone -b production   git@github.com:DEL-ORG/Eric-do-it-yourself-Orders.git    ORDERS
-                git clone -b production   git@github.com:DEL-ORG/Eric-do-it-yourself-Checkout.git   CHECKOUT
-                git clone -b production   git@github.com:DEL-ORG/Eric-do-it-yourself-Catalog.git    CATALOG
-                git clone -b production  git@github.com:DEL-ORG/Eric-do-it-yourself-Cart.git       CART
-                git clone -b production   git@github.com:DEL-ORG/Eric-do-it-yourself-Assets.git     ASSETS
+                git clone -b ui        https://github.com/Demefo/Revive-app.git   UI
+                git clone -b orders    https://github.com/Demefo/Revive-app.git   ORDERS
+                git clone -b checkout  https://github.com/Demefo/Revive-app.git   CHECKOUT
+                git clone -b catalog   https://github.com/Demefo/Revive-app.git   CATALOG
+                git clone -b carts     https://github.com/Demefo/Revive-app.git   CART
+                git clone -b assets    https://github.com/Demefo/Revive-app.git   ASSETS
+ls -lh
 for i in UI ORDERS CHECKOUT CATALOG CART ASSETS 
 do 
   cd $i 
@@ -158,11 +160,11 @@ done
 
             steps {
                 sh '''
-                rm -rf Eric-do-it-yourself-UI || true
-                git clone  -b production git@github.com:DEL-ORG/Eric-do-it-yourself-UI.git
-                cd ${WORKSPACE}/Eric-do-it-yourself-UI/ui
-                docker build -t devopseasylearning/eric_do_it_yourself_ui:${TAG_UI} .
-                docker push  devopseasylearning/eric_do_it_yourself_ui:${TAG_UI}
+                rm -rf Revive-app || true
+                git clone  -b ui https://github.com/Demefo/Revive-app.git     
+                cd ${WORKSPACE}/Revive-app/ui
+                docker build -t rudiori/revive-ui:${TAG_UI} .
+                docker push  rudiori/revive-ui:${TAG_UI}
                 '''
             }
         }
@@ -173,15 +175,15 @@ done
 
             steps {
                 sh '''
-                rm -rf Eric-do-it-yourself-Orders || true
-                git clone  -b production git@github.com:DEL-ORG/Eric-do-it-yourself-Orders.git
-                cd ${WORKSPACE}/Eric-do-it-yourself-Orders/orders
-                docker build -t devopseasylearning/eric_do_it_yourself_orders:${TAG_ORDERS} .
-                docker build -t devopseasylearning/eric_do_it_yourself_orders_db:${TAG_ORDERS} . -f Dockerfile-db
-                docker build -t devopseasylearning/eric_do_it_yourself_orders_db_rabbitmq:${TAG_ORDERS} . -f Dockerfile-rabbit-mq
-                docker push  devopseasylearning/eric_do_it_yourself_orders:${TAG_ORDERS}
-                docker push devopseasylearning/eric_do_it_yourself_orders_db:${TAG_ORDERS}
-                docker push devopseasylearning/eric_do_it_yourself_orders_db_rabbitmq:${TAG_ORDERS}
+                rm -rf Revive-app || true
+                git clone  -b orders https://github.com/Demefo/Revive-app.git               
+                cd ${WORKSPACE}/Revive-app/orders
+                docker build -t rudiori/revive-orders:${TAG_ORDERS} .
+                docker build -t rudiori/revive-orders-db:${TAG_ORDERS} . -f Dockerfile-db
+                docker build -t rudiori/revive-orders-db-rabbitmq:${TAG_ORDERS} . -f Dockerfile-rabbit-mq
+                docker push  rudiori/revive-orders:${TAG_ORDERS}
+                docker push rudiori/revive-orders-db:${TAG_ORDERS}
+                docker push rudiori/revive-orders-db-rabbitmq:${TAG_ORDERS}
                 '''
             }
         }
@@ -191,13 +193,13 @@ done
 
             steps {
                 sh '''
-                rm -rf Eric-do-it-yourself-Checkout || true
-                git clone -b production  git@github.com:DEL-ORG/Eric-do-it-yourself-Checkout.git
-                cd ${WORKSPACE}/Eric-do-it-yourself-Checkout/checkout
-                docker build  -t devopseasylearning/eric_do_it_yourself_checkout:${TAG_CHECKOUT} .
-                docker build  -t devopseasylearning/eric_do_it_yourself_checkout_db:${TAG_CHECKOUT} . -f Dockerfile-db
-                docker push  devopseasylearning/eric_do_it_yourself_checkout:${TAG_CHECKOUT}
-                docker push devopseasylearning/eric_do_it_yourself_checkout_db:${TAG_CHECKOUT}
+                rm -rf Revive-app || true
+                git clone -b production  https://github.com/Demefo/Revive-app.git
+                cd ${WORKSPACE}/Revive-app/checkout
+                docker build  -t rudiori/revive-checkout:${TAG_CHECKOUT} .
+                docker build  -t rudiori/revive-checkout_db:${TAG_CHECKOUT} . -f Dockerfile-db
+                docker push  rudiori/revive-checkout:${TAG_CHECKOUT}
+                docker push rudiori/revive-checkout_db:${TAG_CHECKOUT}
                 '''
             }
         }
@@ -207,13 +209,13 @@ done
 
             steps {
                 sh '''
-                rm -rf Eric-do-it-yourself-Catalog || true
-                git clone  -b production git@github.com:DEL-ORG/Eric-do-it-yourself-Catalog.git
-                cd ${WORKSPACE}/Eric-do-it-yourself-Catalog/catalog
-                docker build  -t devopseasylearning/eric_do_it_yourself_catalog:${TAG_CATALOG} .
-                docker build  -t devopseasylearning/eric_do_it_yourself_catalog_db:${TAG_CATALOG} . -f Dockerfile-db
-                docker push  devopseasylearning/eric_do_it_yourself_catalog:${TAG_CATALOG}
-                docker push devopseasylearning/eric_do_it_yourself_catalog_db:${TAG_CATALOG}
+                rm -rf Revive-app || true
+                git clone  -b catalog https://github.com/Demefo/Revive-app.git                
+                cd ${WORKSPACE}/Revive-app/catalog
+                docker build  -t rudiori/revive-catalog:${TAG_CATALOG} .
+                docker build  -t rudiori/revive-catalog-db:${TAG_CATALOG} . -f Dockerfile-db
+                docker push  rudiori/revive-catalog:${TAG_CATALOG}
+                docker push  rudiori/revive-catalog-db:${TAG_CATALOG}
 
                 '''
             }
@@ -224,13 +226,13 @@ done
 
             steps {
                 sh '''
-                rm -rf Eric-do-it-yourself-Cart || true
-                git clone -b production git@github.com:DEL-ORG/Eric-do-it-yourself-Cart.git
-                cd ${WORKSPACE}/Eric-do-it-yourself-Cart/cart
-                docker  build -t devopseasylearning/eric_do_it_yourself_cart:${TAG_CART} .
-                docker  build -t devopseasylearning/eric_do_it_yourself_cart_dynamodb:${TAG_CART} . -f Dockerfile-dynamodb 
-                docker push  devopseasylearning/eric_do_it_yourself_cart:${TAG_CART}
-                docker push devopseasylearning/eric_do_it_yourself_cart_dynamodb:${TAG_CART}
+                rm -rf Revive-app || true
+                git clone -b carts https://github.com/Demefo/Revive-app.git             
+                cd ${WORKSPACE}/Revive-app/cart
+                docker  build -t rudiori/revive-cart:${TAG_CART} .
+                docker  build -t rudiori/revive-cart_dynamodb:${TAG_CART} . -f Dockerfile-dynamodb 
+                docker push  rudiori/revive-cart:${TAG_CART}
+                docker push rudiori/revive-cart_dynamodb:${TAG_CART}
 
                 '''
             }
@@ -240,11 +242,11 @@ done
 
             steps {
                 sh '''
-                rm -rf Eric-do-it-yourself-Assets || true
-                git clone -b production  git@github.com:DEL-ORG/Eric-do-it-yourself-Assets.git
-                cd ${WORKSPACE}/Eric-do-it-yourself-Assets/assets
-                docker build -t devopseasylearning/eric_do_it_yourself_assets:${TAG_ASSETS} .
-                docker push devopseasylearning/eric_do_it_yourself_assets:${TAG_ASSETS}
+                rm -rf Revive-app || true
+                git clone -b assets  https://github.com/Demefo/Revive-app.git               
+                cd ${WORKSPACE}/Revive-app/assets
+                docker build -t rudiori/revive-assets:${TAG_ASSETS} .
+                docker push rudiori/revive-assets:${TAG_ASSETS}
 
                 '''
             }
@@ -257,15 +259,15 @@ done
 
     post {
         success {
-            slackSend(channel: '#development-alerts', color: 'good', message: "SUCCESSFUL: Application Eric-do-it-yourself-UI REDAY for PROD\n TAG information\n UI: $TAG_UI\n ORDERS: $TAG_ORDERS\n CHECKOUT: $TAG_CHECKOUT\n CATALOG: $TAG_CATALOG\n CART: $TAG_CART\n ASSETS: $TAG_ASSETS")
+            slackSend(channel: '#development-alerts', color: 'good', message: "SUCCESSFUL: Rudi-Revive READY for PROD\n TAG information\n UI: $TAG_UI\n ORDERS: $TAG_ORDERS\n CHECKOUT: $TAG_CHECKOUT\n CATALOG: $TAG_CATALOG\n CART: $TAG_CART\n ASSETS: $TAG_ASSETS")
         }
 
         unstable {
-            slackSend(channel: '#development-alerts', color: 'warning', message: "UNSTABLE: Application Eric-do-it-yourself-UI  Job '${env.JOB_NAME} [${env.TAG}]' (${env.BUILD_URL})")
+            slackSend(channel: '#development-alerts', color: 'warning', message: "UNSTABLE: Rudi-Revive  Job '${env.JOB_NAME} [${env.TAG}]' (${env.BUILD_URL})")
         }
 
         failure {
-            slackSend(channel: '#development-alerts', color: '#FF0000', message: "FAILURE: Application Eric-do-it-yourself-UI Job '${env.JOB_NAME} [${env.TAG}]' (${env.BUILD_URL})")
+            slackSend(channel: '#development-alerts', color: '#FF0000', message: "FAILURE: Rudi-Revive Job '${env.JOB_NAME} [${env.TAG}]' (${env.BUILD_URL})")
         }
 
         cleanup {
