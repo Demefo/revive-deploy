@@ -1,9 +1,9 @@
 catalog:
-  tag: "ffe1df"
+  tag: "137b20"
 orders_db:
   tag: "282748"
 catalog_db:
-  tag: "ffe1df"
+  tag: "137b20"
 cart:
   tag: "69e73f"
 cart_dynamodb:
